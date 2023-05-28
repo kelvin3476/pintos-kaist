@@ -322,10 +322,68 @@ thread_compare_priority(struct list_elem *l, struct list_elem *s, void *aux UNUS
 	return list_entry(l, struct thread, elem)->priority > list_entry(s, struct thread, elem)->priority;
 }
 
+bool
+thread_compare_donate_priority(const struct list_elem *l, const struct list_elem *s, void *aux UNUSED) {
+	return list_entry(l, struct thread, donation_elem)->priority > list_entry(s, struct thread, donation_elem)->priority;
+}
+
+/* Priority donation 을 수행하는 함수를 구현한다.
+   현재 스레드가 기다리고 있는 lock 과 연결 된 모든 스레드들을 순회하며
+   현재 스레드의 우선순위를 lock 을 보유하고 있는 스레드에게 기부 한다.
+   (nested depth 는 8로 제한한다.) */
+void
+donate_priority(void) {
+	int depth;
+	struct thread* curr = thread_current();
+
+	for (depth = 0; depth < 8; depth++) {
+		if (!curr->wait_on_lock)
+			break;
+		struct thread *holder = curr->wait_on_lock->holder;
+		holder->priority = curr->priority;
+		curr = holder;
+	}
+}
+
+/* lock 을 해지 했을때 donations 리스트에서 해당 엔트리를 삭제 하기 위한 함수를 구현한다.*/
+void
+remove_with_lock(struct lock *lock) {
+	struct list_elem *e;
+	struct thread* curr = thread_current();
+
+	for (e = list_begin(&curr->donations); e != list_end(&curr->donations); e = list_next(e)) {
+		struct thread *t = list_entry (e, struct thread, donation_elem);
+		if (t->wait_on_lock == lock)
+			list_remove(&t->donation_elem);
+	}
+}
+
+/* 현재 스레드의 우선순위를 기부받기 전의 우선순위로 변경 */
+
+/* 가장 우선순위가 높은 donations 리스트의 스레드와
+   현재 스레드의 우선순위를 비교하여 높은 값을 현재 스레드의
+   우선순위로 설정한다. */
+void 
+refresh_priority(void) {
+	struct thread* curr = thread_current();
+
+	curr->priority = curr->init_priority;
+
+	if (!list_empty(&curr->donations)) {
+		list_sort(&curr->donations, thread_compare_donate_priority, 0);
+
+		struct thread *front = list_entry(list_begin(&curr->donations), struct thread, donation_elem);
+		if (front->priority > curr->priority)
+			curr->priority = front->priority;
+	}
+}
+
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority) {
-	thread_current ()->priority = new_priority;
+	thread_current ()->init_priority = new_priority;
+
+	refresh_priority();
 	thread_test_preemption();
 }
 
@@ -424,6 +482,10 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->tf.rsp = (uint64_t) t + PGSIZE - sizeof (void *);
 	t->priority = priority;
 	t->magic = THREAD_MAGIC;
+
+	t->init_priority = priority;
+	t->wait_on_lock = NULL;
+	list_init(&t->donations);
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
@@ -582,7 +644,7 @@ schedule (void) {
 		   schedule(). */
 		if (curr && curr->status == THREAD_DYING && curr != initial_thread) {
 			ASSERT (curr != next);
-			list_push_back (&destruction_req, &curr->elem);
+			list_insert_ordered (&destruction_req, &curr->elem, thread_compare_priority, 0);
 		}
 
 		/* Before switching the thread, we first save the information
