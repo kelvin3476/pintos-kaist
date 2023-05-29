@@ -98,8 +98,8 @@ struct thread {
 	int init_priority;
 
 	struct lock *wait_on_lock;
-	struct list_elem d_elem;
 	struct list donations;
+	struct list_elem donation_elem;
 
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem;              /* List element. */
@@ -155,5 +155,11 @@ void do_iret (struct intr_frame *tf);
 // Priority_scheduling
 void thread_test_preemption(void);
 bool thread_compare_priority(struct list_elem *l, struct list_elem *s, void *aux UNUSED);
+
+// Donation_Priority_Scheduling
+bool thread_compare_donate_priority(const struct list_elem *l, const struct list_elem *s, void *aux UNUSED);
+void donate_priority(void);
+void remove_with_rock(struct lock *lock);
+void refresh_priority(void);
 
 #endif /* threads/thread.h */
