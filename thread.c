@@ -24,16 +24,9 @@
    Do not modify this value. */
 #define THREAD_BASIC 0xd42df210
 
-/* [sleep list에 있는 알람시간 중 가장 이른 알람시간 ] 
-   가장 이른 알람시간 <= 현재 ticks 이면, 깨울 스레드가 없다는 의미이다.*/
-extern int64_t MIN_alarm_time;
-
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
 static struct list ready_list;
-
-/* Sleep List */
-static struct list sleep_list;
 
 /* Idle thread. */
 static struct thread *idle_thread;
@@ -116,7 +109,6 @@ thread_init (void) {
 	lock_init (&tid_lock);
 	list_init (&ready_list);
 	list_init (&destruction_req);
-	list_init (&sleep_list); // sleep 스레드들을 연결해놓은 리스트를 초기화한다.
 
 	/* Set up a thread structure for the running thread. */
 	initial_thread = running_thread ();
@@ -219,59 +211,6 @@ thread_create (const char *name, int priority,
 	return tid;
 }
 
-void
-thread_sleep(int64_t ticks) {
-	/* 현재 스레드가 idle 스레드가 아닐 경우 thread의 상태를 BLOCKED로 바꾸고 깨어나야 할 ticks을 저장,
-	   슬립 큐에 삽입하고, awake함수가 실행되어야 할 tick값을 update */
-	/* 현재 스레드를 슬립 큐에 삽입한 후에 스케쥴한다. */
-	/* 해당 과정중에는 인터럽트를 받아들이지 않는다. */
-
-	struct thread *t = thread_current();
-	enum intr_level old_level;
-
-	ASSERT(!intr_context());
-	old_level = intr_disable();
-	if (t != idle_thread) {
-		t->time_to_wakeup = ticks;
-		if (MIN_alarm_time > ticks) {
-			MIN_alarm_time = ticks;
-		}
-		list_push_back(&sleep_list, &t->elem);
-	}
-
-	do_schedule(THREAD_BLOCKED);
-	intr_set_level(old_level);
-}
-
-void
-thread_awake(int64_t ticks) {
-	struct thread *t;
-	struct list_elem *now = list_begin(&sleep_list);
-	int64_t new_MIN = INT64_MAX;
-
-	/* sleep list를 전부 순회하며
-	   알람시간이 다 된 스레드를 unblock 해준다. */
-	while (now != list_tail(&sleep_list)) {
-		// list_entry return값 = thread 구조체
-		t = list_entry(now, struct thread, elem);
-
-		// 현재 스레드가 알람 시간이 다 되었다면 깨운다.
-		if (t->time_to_wakeup <= ticks) {
-			now = list_remove(&t->elem);
-			thread_unblock(t);
-		}
-		// 현재 스레드가 아직 더 자야한다면 다음 스레드로 now를 갱신한다.
-		else {
-			now = list_next(now);
-			// 필요하다면 전체 sleep list의 MIN 값을 갱신한다.
-			if (new_MIN > t->time_to_wakeup) {
-				new_MIN = t->time_to_wakeup;
-			}
-		}
-	}
-	MIN_alarm_time = new_MIN;
-}
-
 /* Puts the current thread to sleep.  It will not be scheduled
    again until awoken by thread_unblock().
 
@@ -362,13 +301,9 @@ thread_yield (void) {
 	struct thread *curr = thread_current ();
 	enum intr_level old_level;
 
-	// 외부 인터럽트를 수행중이라면 종료. 외부 인터럽트는 인터럽트 당하면 안 된다.
 	ASSERT (!intr_context ());
 
-	old_level = intr_disable (); // 인터럽트를 disable한다.
-
-	// 만약 현재 스레드가 idle 스레드가 아니라면 ready queue에 다시 담는다.
-	// idle 스레드라면 담지 않는다. 어차피 static으로 선언되어 있어, 필요할 때 불러올 수 있다.
+	old_level = intr_disable ();
 	if (curr != idle_thread)
 		// list_push_back (&ready_list, &curr->elem);
 		list_insert_ordered(&ready_list, &curr->elem, thread_compare_priority, 0);
@@ -378,13 +313,8 @@ thread_yield (void) {
 
 void
 thread_test_preemption (void) {
-	if (!list_empty(&ready_list)) {
-		if (thread_compare_priority(&list_entry(list_front(&ready_list), struct thread, elem)->elem, &thread_current()->elem, 0)) {
-			thread_yield();
-		}
-	}
-	// if (!list_empty (&ready_list) && thread_current()->priority < list_entry(list_front(&ready_list), struct thread, elem)->priority)
-	// 	thread_yield();
+	if (!list_empty (&ready_list) && thread_current()->priority < list_entry(list_front(&ready_list), struct thread, elem)->priority)
+		thread_yield();
 }
 
 bool
@@ -396,7 +326,6 @@ thread_compare_priority(struct list_elem *l, struct list_elem *s, void *aux UNUS
 void
 thread_set_priority (int new_priority) {
 	thread_current ()->priority = new_priority;
-	thread_current ()->init_priority = new_priority;
 	thread_test_preemption();
 }
 
@@ -495,10 +424,6 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->tf.rsp = (uint64_t) t + PGSIZE - sizeof (void *);
 	t->priority = priority;
 	t->magic = THREAD_MAGIC;
-
-	t->init_priority = priority;
-	t->wait_on_lock = NULL;
-	list_init(&t->donations);
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
