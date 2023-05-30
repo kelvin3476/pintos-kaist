@@ -411,7 +411,7 @@ donate_priority(void) {
 }
 
 void
-remove_with_rock(struct lock *lock) {
+remove_with_lock(struct lock *lock) {
 	struct list_elem *e;
 	struct thread *curr = thread_current();
 

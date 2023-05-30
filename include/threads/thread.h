@@ -159,7 +159,7 @@ bool thread_compare_priority(struct list_elem *l, struct list_elem *s, void *aux
 // Donation_Priority_Scheduling
 bool thread_compare_donate_priority(const struct list_elem *l, const struct list_elem *s, void *aux UNUSED);
 void donate_priority(void);
-void remove_with_rock(struct lock *lock);
+void remove_with_lock(struct lock *lock);
 void refresh_priority(void);
 
 #endif /* threads/thread.h */
