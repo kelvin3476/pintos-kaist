@@ -32,7 +32,8 @@ extern int64_t MIN_alarm_time;
    that are ready to run but not actually running. */
 static struct list ready_list;
 
-/* Sleep List */
+/* List of processes in THREAD_BLOCKED state, that is, processes
+   that are Waiting for an event to trigger. */
 static struct list sleep_list;
 
 /* Idle thread. */
@@ -543,6 +544,7 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->priority = priority;
 	t->magic = THREAD_MAGIC;
 
+	/* Priority donation 구조체 초기화 */
 	t->init_priority = priority;
 	t->wait_on_lock = NULL;
 	list_init(&t->donations);

@@ -93,6 +93,9 @@ struct thread {
 	int priority;                       /* Priority. */
 	int64_t time_to_wakeup;				/* Time to wake up (for sleeping thread) */
 
+	/* Shared between thread.c and synch.c. */
+	struct list_elem elem;              /* List element. */
+
 	/* donation list */
 
 	int init_priority;
@@ -100,9 +103,6 @@ struct thread {
 	struct lock *wait_on_lock;
 	struct list donations;
 	struct list_elem donation_elem;
-
-	/* Shared between thread.c and synch.c. */
-	struct list_elem elem;              /* List element. */
 
 #ifdef USERPROG
 	/* Owned by userprog/process.c. */
