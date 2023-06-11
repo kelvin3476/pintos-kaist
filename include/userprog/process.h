@@ -10,4 +10,10 @@ int process_wait (tid_t);
 void process_exit (void);
 void process_activate (struct thread *next);
 
+/* Argument Passing */
+void argument_stack(char **parse, int count, void **esp);
+
+/* System Call */
+struct thread *get_child_process(int pid);
+
 #endif /* userprog/process.h */
