@@ -8,7 +8,7 @@
 
 unsigned page_hash (const struct hash_elem *p_, void *aux UNUSED);
 bool page_less (const struct hash_elem *a_, const struct hash_elem *b_, void *aux UNUSED);
-
+void clear_func (struct hash_elem *elem, void *aux);
 
 /* Initializes the virtual memory subsystem by invoking each subsystem's
  * intialize codes. */
@@ -270,6 +270,7 @@ void
 supplemental_page_table_kill (struct supplemental_page_table *spt UNUSED) {
 	/* TODO: Destroy all the supplemental_page_table hold by thread and
 	 * TODO: writeback all the modified contents to the storage. */
+	hash_clear(&spt->hash, clear_func);
 }
 
 /* Returns a hash value for page p. */
@@ -287,4 +288,9 @@ page_less (const struct hash_elem *a_,
   const struct page *b = hash_entry (b_, struct page, hash_elem);
 
   return a->va < b->va;
+}
+
+void clear_func (struct hash_elem *elem, void *aux) {
+	struct page *page = hash_entry(elem, struct page, hash_elem);
+	vm_dealloc_page(page);
 }

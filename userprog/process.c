@@ -18,8 +18,6 @@
 #include "threads/mmu.h"
 #include "threads/vaddr.h"
 #include "intrinsic.h"
-
-
 #ifdef VM
 #include "vm/vm.h"
 #endif
@@ -722,7 +720,8 @@ lazy_load_segment (struct page *page, struct aux_data *aux) {
 	}
 
 	memset(page->va + page_read_bytes, 0, page_zero_bytes);
-	return true ;
+	free(aux); // aux는 더 이상 사용되지 않으니까 여기서 바로 free
+	return true ; 
 }
 
 /* Loads a segment starting at offset OFS in FILE at address
