@@ -256,8 +256,6 @@ check_address(void *addr) {
 	struct thread *cur = thread_current();
 	if (addr == NULL || is_kernel_vaddr(addr) || pml4_get_page(cur->pml4, addr) == NULL)
 		exit(-1);
-<<<<<<< Updated upstream
-=======
 	// if(is_kernel_vaddr(addr)) {
     //     return false;
     // }
@@ -265,5 +263,4 @@ check_address(void *addr) {
     //     return false;
     // }
 	// return true;
->>>>>>> Stashed changes
 }
