@@ -5,6 +5,7 @@
 #include "vm/inspect.h"
 #include "threads/mmu.h"
 #include "threads/vaddr.h"
+#include "userprog/process.h"
 
 unsigned page_hash (const struct hash_elem *p_, void *aux UNUSED);
 bool page_less (const struct hash_elem *a_, const struct hash_elem *b_, void *aux UNUSED);
@@ -74,6 +75,7 @@ vm_alloc_page_with_initializer (enum vm_type type, void *upage, bool writable,
 		}
 		uninit_new(page, upage, init, type, aux, initializer);
 		page->writable = writable; 
+		page->full_type = type;
 
 		/* TODO: Insert the page into the spt. */
 		bool res = spt_insert_page(spt, page);
@@ -163,6 +165,12 @@ vm_get_frame (void) {
 /* Growing the stack. */
 static void
 vm_stack_growth (void *addr UNUSED) {
+	struct supplemental_page_table *spt = &thread_current ()->spt;
+	while (!spt_find_page (spt, addr)) {
+		vm_alloc_page (VM_ANON | VM_MARKER_0, addr, true);
+		vm_claim_page (addr);
+		addr += PGSIZE;
+  }
 }
 
 /* Handle the fault on write_protected page */
@@ -175,11 +183,29 @@ bool
 vm_try_handle_fault (struct intr_frame *f UNUSED, void *addr UNUSED,
 		bool user UNUSED, bool write UNUSED, bool not_present UNUSED) {
 	struct supplemental_page_table *spt UNUSED = &thread_current ()->spt;
-	struct page *page = spt_find_page(spt, addr);
+	void *page_addr = pg_round_down(addr); // 페이지 사이즈로 내려서 spt_find 해야 하기 때문 
+	uint64_t addr_v = (uint64_t)addr;
+	struct page *page = spt_find_page(spt, page_addr);
+	uint64_t MAX_STACK = USER_STACK - (1<<20);
+
+	uint64_t rsp = NULL;
+	rsp = user ? f->rsp : thread_current()->rsp; 
+
+	if (is_kernel_vaddr(addr)) 
+		return false;
+
+	if (!not_present && write)
+    	return false;
+
 	/* TODO: Validate the fault */
 	/* TODO: Your code goes here */
 	if (page == NULL) {
-		return false ; 
+		if (addr_v > MAX_STACK && addr_v < USER_STACK && addr_v >= rsp -8) {
+			vm_stack_growth(page_addr);
+			page = spt_find_page(spt, page_addr);
+		} else { 
+			return false ; 
+		}
 	}
 
 	return vm_do_claim_page (page);
@@ -240,6 +266,7 @@ supplemental_page_table_copy (struct supplemental_page_table *dst, struct supple
 	while (hash_next (&i)) {
     	struct page *p = hash_entry (hash_cur (&i), struct page, hash_elem);
 		enum vm_type type = page_get_type(p);	
+		enum vm_type full_type = p->full_type;
 		void *va = p-> va; 
 		bool writable = p-> writable;
 
@@ -248,21 +275,21 @@ supplemental_page_table_copy (struct supplemental_page_table *dst, struct supple
 			vm_initializer *init = p->uninit.init; 
 			struct aux_data *aux = malloc(sizeof(struct aux_data));
 			aux = p->uninit.aux; 
-			if(!vm_alloc_page_with_initializer(type, va, writable, init, aux))
+			if(!vm_alloc_page_with_initializer(full_type, va, writable, init, aux))
 				return false;
 		} else {
-		// 초기화된 페이지 (이미 load는 끝남)
-			if (!vm_alloc_page(type, va, writable)){
+			// 초기화된 페이지 (이미 load는 끝남)
+			if (!vm_alloc_page(full_type, va, writable)) {
 				return false; 
 			}
 			if (!vm_claim_page(va)) {
 				return false;
 			}
-			memcpy(va, p->frame->kva, PGSIZE); // 실제 메모리 내용 복사
-		}     
+
+			memcpy(va, p->frame->kva, PGSIZE); // 실제 메모리 내용 복사     
+		}
     }
 	return true;
-	// setup stack 을 호출해서 marked 된 것들을 셋업되게 해야 한다 
 }
 
 /* Free the resource hold by the supplemental page table */

@@ -130,6 +130,9 @@ struct thread {
 	struct supplemental_page_table spt;
 #endif
 
+	uint64_t rsp;
+	uint64_t stack_btm;
+
 	/* Owned by thread.c. */
 	struct intr_frame tf;               /* Information for switching */
 	struct intr_frame ptf;
