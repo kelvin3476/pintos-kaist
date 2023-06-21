@@ -699,30 +699,6 @@ install_page (void *upage, void *kpage, bool writable) {
  * upper block. */
 
 static bool
-<<<<<<< Updated upstream
-lazy_load_segment (struct page *page, struct aux_data *aux) {
-	/* TODO: Load the segment from the file */
-	/* TODO: This called when the first page fault occurs on address VA. */
-	/* TODO: VA is available when calling this function. */
-	struct file *file = aux->file ;
-	void * va = aux-> va;
-	bool writable = aux->writable ;
-	uint32_t page_read_bytes = aux->page_read_bytes ;
-	uint32_t page_zero_bytes = aux->page_zero_bytes ;
-	off_t ofs = aux->ofs; 
-
-	file_seek(file, ofs);
-
-	/* Load this page. */
-	if (file_read(file, page->va, page_read_bytes) != (int)page_read_bytes)
-	{
-		return false;
-	}
-
-	memset(page->va + page_read_bytes, 0, page_zero_bytes);
-	free(aux); // aux는 더 이상 사용되지 않으니까 여기서 바로 free
-	return true ; 
-=======
 lazy_load_segment (struct page *page, struct vm_entry *aux) {
 	/* TODO: Load the segment from the file */
 	/* TODO: This called when the first page fault occurs on address VA. */
@@ -735,7 +711,6 @@ lazy_load_segment (struct page *page, struct vm_entry *aux) {
 	}
 	memset(page->frame->kva + vme->read_bytes, 0, vme->zero_bytes);
 	return true;
->>>>>>> Stashed changes
 }
 
 /* Loads a segment starting at offset OFS in FILE at address
@@ -767,19 +742,6 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 		size_t page_zero_bytes = PGSIZE - page_read_bytes;
 
 		/* TODO: Set up aux to pass information to the lazy_load_segment. */
-<<<<<<< Updated upstream
-		struct aux_data *aux;
-        aux = (struct aux_data *)calloc(1, sizeof(struct aux_data));
-
-        aux->file = file;
-		aux-> va = upage; 
-		aux->writable = writable; 
-        aux->page_read_bytes = page_read_bytes;
-        aux->page_zero_bytes = page_zero_bytes;
-        aux->ofs = ofs;	
-
-		if (!vm_alloc_page_with_initializer (VM_FILE, upage, writable, lazy_load_segment, aux))
-=======
 		// void *aux = NULL;
 		struct vm_entry *vme = (struct vm_entry *)malloc(sizeof(struct vm_entry));
 		vme->f = file;
@@ -788,18 +750,13 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 		vme->zero_bytes = page_zero_bytes;
 		//aux 대신 vme를 넘겨준다.
 		if (!vm_alloc_page_with_initializer(VM_ANON, upage, writable, lazy_load_segment, vme))
->>>>>>> Stashed changes
 			return false;
 
 		/* Advance. */
 		read_bytes -= page_read_bytes;
 		zero_bytes -= page_zero_bytes;
 		upage += PGSIZE;
-<<<<<<< Updated upstream
-		ofs += page_read_bytes; //* offset을 수동으로 올려줘야 함 
-=======
 		ofs += page_read_bytes;
->>>>>>> Stashed changes
 	}
 	return true;
 }

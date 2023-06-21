@@ -1,7 +1,3 @@
-<<<<<<< Updated upstream
-make clean
-make check
-=======
 # make clean
 # make check
 
@@ -20,6 +16,4 @@ make tests/userprog/exec-arg.result
 # make tests/userprog/rox-child.result
 # make tests/userprog/rox-multichild.result
 
-
 cd ..
->>>>>>> Stashed changes

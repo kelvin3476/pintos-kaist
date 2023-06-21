@@ -64,17 +64,6 @@ vm_alloc_page_with_initializer (enum vm_type type, void *upage, bool writable,
 		struct page * page = (struct page*)malloc(sizeof(struct page)) ;
 		bool (*initializer)(struct page *, enum vm_type, void *) ; 
 
-<<<<<<< Updated upstream
-		if (VM_TYPE(type) == VM_ANON) {
-			initializer = anon_initializer;
-		}
-		else if (VM_TYPE(type) == VM_FILE) {
-			initializer = file_backed_initializer;
-		}
-		else {
-			goto err ;
-		}
-=======
 		switch (VM_TYPE(type)) { //타입에 맞는 초기화 함수 지정
 			case VM_ANON :
 				initializer = anon_initializer;
@@ -86,22 +75,12 @@ vm_alloc_page_with_initializer (enum vm_type type, void *upage, bool writable,
 				NOT_REACHED();
 				break;
 			}
->>>>>>> Stashed changes
 		uninit_new(page, upage, init, type, aux, initializer);
 		page->writable = writable; 
 		page->full_type = type;
 
 		/* TODO: Insert the page into the spt. */
-<<<<<<< Updated upstream
-		bool res = spt_insert_page(spt, page);
-		struct page *result = spt_find_page(spt, upage);
-		if (result == NULL){
-			goto err ;
-		}
-		return true ; 
-=======
 		return spt_insert_page(spt, page);
->>>>>>> Stashed changes
 	}
 err:
 	return false;
@@ -110,15 +89,8 @@ err:
 /* Find VA from spt and return page. On error, return NULL. */
 struct page *
 spt_find_page (struct supplemental_page_table *spt UNUSED, void *va UNUSED) {
+	struct page *page = NULL;
 	/* TODO: Fill this function. */
-<<<<<<< Updated upstream
-	struct page p;
-	struct hash_elem *e;
-
-	p.va = pg_round_down(va);
-	e = hash_find (&spt->hash, &p.hash_elem); 
-	return e != NULL ? hash_entry (e, struct page, hash_elem) : NULL;
-=======
 	page = (struct page *)malloc(sizeof(struct page));
 	page->va = pg_round_down(va);
 
@@ -129,18 +101,10 @@ spt_find_page (struct supplemental_page_table *spt UNUSED, void *va UNUSED) {
 		return NULL;
 	}
 	return hash_entry(e, struct page, hash_elem);
->>>>>>> Stashed changes
 }
 
 /* Insert PAGE into spt with validation. */
 bool
-<<<<<<< Updated upstream
-spt_insert_page (struct supplemental_page_table *spt UNUSED,
-		struct page *page UNUSED) {
-
-	struct hash_elem *result = hash_insert (&spt->hash, &page->hash_elem); // null이면 성공인 것 
-	return result == NULL ? true : false ; 
-=======
 spt_insert_page (struct supplemental_page_table *spt UNUSED, struct page *page UNUSED) {
 	int succ = false;
 	/* TODO: Fill this function. */
@@ -149,34 +113,23 @@ spt_insert_page (struct supplemental_page_table *spt UNUSED, struct page *page U
 		succ = true;
 	}
 	return succ;
->>>>>>> Stashed changes
 }
 
 void
 spt_remove_page (struct supplemental_page_table *spt, struct page *page) {
-<<<<<<< Updated upstream
-	struct hash_elem * result =	hash_delete (&spt->hash, &page->hash_elem);
-	if (result == NULL) {
-		return false; 
-	}
-
-	vm_dealloc_page (page);
-	return true;
-=======
 	struct hash_elem *e = hash_delete(&spt->hash, &page->hash_elem);
 	if(e == NULL) {
 		return;
 	}
 	vm_dealloc_page(page);
 	return;
->>>>>>> Stashed changes
 }
 
 /* Get the struct frame, that will be evicted. */
 static struct frame *
 vm_get_victim (void) {
 	struct frame *victim = NULL;
-	 /* TODO: The policy for eviction is up to you. */
+	/* TODO: The policy for eviction is up to you. */
 
 	return victim;
 }
@@ -197,18 +150,8 @@ vm_evict_frame (void) {
  * space.*/
 static struct frame *
 vm_get_frame (void) {
+	struct frame *frame = NULL;
 	/* TODO: Fill this function. */
-<<<<<<< Updated upstream
-	uint64_t *kva = palloc_get_page(PAL_USER);
-
-	if (kva == NULL) {
-		 PANIC ("no memory. evict & swap out 필요 ");
-	}
-
-	struct frame *frame = (struct frame *)malloc(sizeof(struct frame));
-	frame->kva = kva ;
-	frame->page = NULL ; 
-=======
 	//사용자 풀에서 페이지를 할당받기 - 할당받은 물리 메모리 주소 반환
 	void *addr = palloc_get_page(PAL_USER);
 	if(addr == NULL) {
@@ -218,7 +161,6 @@ vm_get_frame (void) {
 	frame = (struct frame *)malloc(sizeof(struct frame));
 	frame->kva = addr;
 	frame->page = NULL;
->>>>>>> Stashed changes
 
 	ASSERT(frame != NULL);
 	ASSERT (frame->page == NULL);
@@ -286,12 +228,9 @@ vm_dealloc_page (struct page *page) {
 /* Claim the page that allocate on VA. */
 bool
 vm_claim_page (void *va UNUSED) {
+	struct page *page = NULL;
 	/* TODO: Fill this function */
-<<<<<<< Updated upstream
-	struct page *page = spt_find_page (&thread_current()->spt, va);
-=======
 	page = spt_find_page (&thread_current()->spt, va);
->>>>>>> Stashed changes
 	if (page == NULL) {
 		 return false;
 	}
@@ -326,39 +265,6 @@ supplemental_page_table_init (struct supplemental_page_table *spt UNUSED) {
 /* Copy supplemental page table from src to dst */
 bool
 supplemental_page_table_copy (struct supplemental_page_table *dst, struct supplemental_page_table *src) {
-<<<<<<< Updated upstream
-	struct hash *parent_hash = &src->hash ;
-	struct hash *curr_hash = &dst->hash ; 
-
-	struct hash_iterator i;
-	hash_first (&i, parent_hash);
-	while (hash_next (&i)) {
-    	struct page *p = hash_entry (hash_cur (&i), struct page, hash_elem);
-		enum vm_type type = page_get_type(p);	
-		enum vm_type full_type = p->full_type;
-		void *va = p-> va; 
-		bool writable = p-> writable;
-
-		if (p->operations->type == VM_UNINIT) {
-		// 초기화 안 된 페이지
-			vm_initializer *init = p->uninit.init; 
-			struct aux_data *aux = malloc(sizeof(struct aux_data));
-			aux = p->uninit.aux; 
-			if(!vm_alloc_page_with_initializer(full_type, va, writable, init, aux))
-				return false;
-		} else {
-			// 초기화된 페이지 (이미 load는 끝남)
-			if (!vm_alloc_page(full_type, va, writable)) {
-				return false; 
-			}
-			if (!vm_claim_page(va)) {
-				return false;
-			}
-
-			memcpy(va, p->frame->kva, PGSIZE); // 실제 메모리 내용 복사     
-		}
-    }
-=======
 	struct hash_iterator i; //해시 테이블 내의 위치
 	hash_first(&i, &src->hash); //i를 해시의 첫번째 요소를 가리키도록 초기화
 	while (hash_next(&i)) { // 해시의 다음 요소가 있을 때까지 반복
@@ -396,7 +302,6 @@ supplemental_page_table_copy (struct supplemental_page_table *dst, struct supple
 			memcpy(dst_page->frame->kva, src_page->frame->kva, PGSIZE);
 		}
 	}
->>>>>>> Stashed changes
 	return true;
 }
 
@@ -417,12 +322,7 @@ page_hash (const struct hash_elem *p_, void *aux UNUSED) {
 
 /* Returns true if page a precedes page b. */
 bool
-<<<<<<< Updated upstream
-page_less (const struct hash_elem *a_,
-           const struct hash_elem *b_, void *aux UNUSED) {
-=======
 page_less (const struct hash_elem *a_, const struct hash_elem *b_, void *aux UNUSED) {
->>>>>>> Stashed changes
   const struct page *a = hash_entry (a_, struct page, hash_elem);
   const struct page *b = hash_entry (b_, struct page, hash_elem);
 

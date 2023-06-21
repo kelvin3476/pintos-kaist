@@ -65,11 +65,7 @@ uninit_destroy (struct page *page) {
 	struct uninit_page *uninit = &page->uninit;
 	/* TODO: Fill this function.
 	 * TODO: If you don't have anything to do, just return. */
-<<<<<<< Updated upstream
-	free(uninit->aux);
-=======
 	// free(uninit->aux);
->>>>>>> Stashed changes
 	// 연결된 frame은 없으므로 끊어줘야할 연결은 없음
 	
 	return;
