@@ -145,6 +145,8 @@ page_fault (struct intr_frame *f) {
 	if (vm_try_handle_fault (f, fault_addr, user, write, not_present))
 		return;
 #endif
+	
+	exit(-1);
 
 	//    if(user) {
     //     exit(-1);

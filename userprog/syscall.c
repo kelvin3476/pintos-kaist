@@ -256,10 +256,23 @@ close (int fd) {
 
 void
 check_address(void *addr) {
+<<<<<<< Updated upstream
 	struct thread *cur = thread_current();
 	if (addr == NULL || is_kernel_vaddr(addr) || pml4_get_page(cur->pml4, addr) == NULL)
 		exit(-1);
 	// if(is_kernel_vaddr(addr)) {
+=======
+	if (addr == NULL || !is_user_vaddr((uint64_t)addr)) {
+        exit(-1);
+    } else if (spt_find_page(&thread_current()->spt, (uint64_t)addr) == NULL) {
+		exit(-1);
+	}
+	return true;
+	// struct thread *cur = thread_current();
+	// if (addr == NULL || is_kernel_vaddr(addr) || pml4_get_page(cur->pml4, addr) == NULL)
+	// 	exit(-1);
+	// if(!is_user_vaddr(addr)) {
+>>>>>>> Stashed changes
     //     return false;
     // }
     // if (spt_find_page(&thread_current()->spt, addr)== NULL) {
