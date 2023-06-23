@@ -369,7 +369,7 @@ struct ELF64_PHDR {
 #define ELF ELF64_hdr
 #define Phdr ELF64_PHDR
 
-// static bool setup_stack (struct intr_frame *if_);
+static bool setup_stack (struct intr_frame *if_);
 static bool validate_segment (const struct Phdr *, struct file *);
 static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
 		uint32_t read_bytes, uint32_t zero_bytes,
@@ -527,13 +527,11 @@ void argument_stack(char **parse, int count, void **esp) {
         argv_address[i] = *esp;
     }
 
-    // Pad size to ensure alignment on 8-byte boundary
-	if (size % 8) {
-		for (int i = (8 - (size % 8)); 0 < i; i--) {
-			*esp -= 1;
-		**(char **)esp = 0;
-	}
-  }
+	// Pad size to ensure alignment on 8-byte boundary
+	int padding = (8 - (size % 8)) % 8;
+	*esp -= padding;
+	memset(*esp, 0, padding);
+
 
     // Null-terminate the last word-aligned address
     *esp -= 8;

@@ -258,10 +258,10 @@ void
 check_address(void *addr) {
 	if (addr == NULL || !is_user_vaddr((uint64_t)addr)) {
         exit(-1);
-    } else if (spt_find_page(&thread_current()->spt, (uint64_t)addr) == NULL) {
-		exit(-1);
-	}
-	return true;
+    } 
+	// if (spt_find_page(&thread_current()->spt, (uint64_t)addr) == NULL) {
+	// 	exit(-1);
+	// }
 	// struct thread *cur = thread_current();
 	// if (addr == NULL || is_kernel_vaddr(addr) || pml4_get_page(cur->pml4, addr) == NULL)
 	// 	exit(-1);
