@@ -13,8 +13,18 @@
 #include "filesys/filesys.h"
 #include "filesys/file.h"
 
+<<<<<<< Updated upstream
+=======
+// * VM 추가
+#include "vm/vm.h"
+#include "threads/mmu.h"
+#include "vm/file.h"
+
+>>>>>>> Stashed changes
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
+
+#define FDT_COUNT_LIMIT 128
 
 /* System call.
  *
@@ -96,6 +106,15 @@ syscall_handler (struct intr_frame *f) {
 		case SYS_CLOSE:
 			close(f->R.rdi);
 			break;
+<<<<<<< Updated upstream
+=======
+		case SYS_MMAP:
+			f->R.rax = mmap(f->R.rdi, f->R.rsi, f->R.rdx, f->R.r10, f->R.r8);
+			break;
+		case SYS_MUNMAP:
+			munmap(f->R.rdi);
+			break;
+>>>>>>> Stashed changes
 		default:
 			exit(-1);
 			break;
@@ -105,6 +124,7 @@ syscall_handler (struct intr_frame *f) {
 void 
 halt(void) {
 	power_off();
+<<<<<<< Updated upstream
 }
 
 void 
@@ -228,6 +248,160 @@ write (int fd UNUSED, const void *buffer, unsigned size) {
 	}
 }
 
+=======
+}
+
+void 
+exit(int status) {
+	struct thread *cur = thread_current();
+	cur->exit_status = status;
+	printf("%s: exit(%d)\n", cur->name, status);
+	thread_exit();	
+}
+
+int
+fork (const char *thread_name){
+	check_address(thread_name);
+	return process_fork(thread_name, &thread_current()->ptf);
+}
+
+int
+exec (const char *file_name) {
+	check_address(file_name);
+
+	int file_size = strlen(file_name) + 1;
+	char *fn_copy = palloc_get_page(PAL_ZERO);
+	if (!fn_copy) {
+		exit(-1);
+		return -1;
+	}
+	strlcpy(fn_copy, file_name, file_size);
+	if (process_exec(fn_copy) == -1) {
+		exit(-1);
+		return -1;
+	}
+}
+
+int
+wait (tid_t pid) {
+	return process_wait(pid);
+}
+
+bool
+create (const char *file, unsigned initial_size) {
+	check_address(file);
+
+	lock_acquire(&filesys_lock);
+	bool result = filesys_create(file, initial_size);
+	lock_release(&filesys_lock);
+
+	return result;
+}
+
+bool
+remove (const char *file) {
+	check_address(file);
+
+	lock_acquire(&filesys_lock);
+	bool result = filesys_remove(file);
+	lock_release(&filesys_lock);
+
+	return result;
+}
+
+int
+open (const char *file) {
+	check_address(file);
+	struct thread *cur = thread_current();
+	lock_acquire(&filesys_lock);
+	struct file *fd = filesys_open(file);
+	if (fd) {
+		for (int i = 2; i < 128; i++) {
+			if (!cur->fdt[i]) {
+				cur->fdt[i] = fd;
+				cur->next_fd = i + 1;
+				lock_release(&filesys_lock);
+				return i;
+			}
+		}
+		file_close(fd);
+	}
+
+	lock_release(&filesys_lock);
+	return -1;
+}
+
+int
+filesize (int fd) {
+	struct file *file = thread_current()->fdt[fd];
+
+	lock_acquire(&filesys_lock);
+
+	if (file) {
+
+		lock_release(&filesys_lock);
+		return file_length(file);
+	}
+
+	lock_release(&filesys_lock);
+	return -1;
+}
+
+int
+read (int fd, void *buffer, unsigned size) {
+	check_address(buffer);
+
+	#ifdef VM
+		struct page* page = spt_find_page(&thread_current()->spt, buffer);
+		if (page->writable == 0) {
+			exit(-1);
+		}
+	#endif
+
+	if (fd == 1) {
+		return -1;
+	}
+
+	if (fd == 0) {
+		lock_acquire(&filesys_lock);
+		int byte = input_getc();
+		lock_release(&filesys_lock);
+		return byte;
+	}
+	struct file *file = thread_current()->fdt[fd];
+	if (file) {
+		lock_acquire(&filesys_lock);
+		int read_byte = file_read(file, buffer, size);
+		lock_release(&filesys_lock);
+		return read_byte;
+	}
+	return -1;
+}
+
+int
+write (int fd UNUSED, const void *buffer, unsigned size) {
+	check_address(buffer);
+
+	if (fd == 0) { // STDIN 일때 -1
+		return -1;
+	}
+
+	if (fd == 1) {
+		lock_acquire(&filesys_lock);
+		putbuf(buffer, size);
+		lock_release(&filesys_lock);
+		return size;
+	}
+	struct file *file = thread_current()->fdt[fd];
+	if (file) {
+		lock_acquire(&filesys_lock);
+		int write_byte = file_write(file, buffer, size);
+		lock_release(&filesys_lock);
+		return write_byte;
+	}
+}
+
+>>>>>>> Stashed changes
 void
 seek (int fd, unsigned position) {
 	struct file *curfile = thread_current()->fdt[fd];
@@ -239,8 +413,18 @@ seek (int fd, unsigned position) {
 unsigned
 tell (int fd) {
 	struct file *curfile = thread_current()->fdt[fd];
+<<<<<<< Updated upstream
 	if (curfile)
 		return file_tell(curfile);
+=======
+	if (curfile) {
+
+		lock_acquire(&filesys_lock);
+		return file_tell(curfile);
+		lock_release(&filesys_lock);
+
+	}
+>>>>>>> Stashed changes
 }
 
 void
@@ -256,7 +440,11 @@ close (int fd) {
 
 void
 check_address(void *addr) {
+<<<<<<< Updated upstream
 	if (addr == NULL || !is_user_vaddr((uint64_t)addr)) {
+=======
+	if (addr == NULL || !is_user_vaddr(addr)) {
+>>>>>>> Stashed changes
         exit(-1);
     } 
 	// if (spt_find_page(&thread_current()->spt, (uint64_t)addr) == NULL) {
@@ -272,4 +460,48 @@ check_address(void *addr) {
     //     return false;
     // }
 	// return true;
+<<<<<<< Updated upstream
+=======
+}
+
+void *mmap (void *addr, size_t length, int writable, int fd, off_t offset) {
+
+	if(!addr || addr != pg_round_down(addr)) { //addr이 존재하지 않거나 정렬되어 있지 않은 경우
+		return NULL;
+	}
+	if (offset != pg_round_down(offset)) { //offset이 정렬되어 있지 않은 경우
+		return NULL;
+	}
+    if (!is_user_vaddr(addr) || !is_user_vaddr(addr + length)) { //사용자 영역에 존재하지 않을 경우
+		return NULL;
+	}
+    if (spt_find_page(&thread_current()->spt, addr)) { //addr에 할당된 페이지가 존재할 경우
+		return NULL;
+	}
+    struct file *f = process_get_file(fd); //fd에 파일이 없을 경우
+    if (f == NULL) {
+		return NULL;
+	}
+    if (file_length(f) == 0 || (int)length <= 0) { //길이가 0이하일 경우
+		return NULL;
+	}
+
+    return do_mmap(addr, length, writable, f, offset);
+}
+
+void munmap (void *addr) {
+	do_munmap(addr);
+}
+
+/* fd가 가리키는 파일 반환하는 함수 */
+struct file *process_get_file(int fd)
+{
+	struct file **fdt = thread_current()->fdt;
+
+	if (fd < 2 || fd >= FDT_COUNT_LIMIT)
+	{
+		return NULL;
+	}
+	return fdt[fd];
+>>>>>>> Stashed changes
 }

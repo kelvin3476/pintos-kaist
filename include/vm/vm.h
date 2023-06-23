@@ -49,6 +49,10 @@ struct page {
 	/* Your implementation */
 	struct hash_elem hash_elem;
 	bool writable;
+<<<<<<< Updated upstream
+=======
+	int mapped_page_cnt;
+>>>>>>> Stashed changes
 
 	enum vm_type full_type; // vm_type with markers
 	/* Per-type data are binded into the union.

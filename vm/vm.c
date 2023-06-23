@@ -188,8 +188,10 @@ vm_handle_wp (struct page *page UNUSED) {
 bool
 vm_try_handle_fault (struct intr_frame *f UNUSED, void *addr UNUSED,
 		bool user UNUSED, bool write UNUSED, bool not_present UNUSED) {
+
 	struct supplemental_page_table *spt UNUSED = &thread_current ()->spt;
 	void *page_addr = pg_round_down(addr); // 페이지 사이즈로 내려서 spt_find 해야 하기 때문 
+<<<<<<< Updated upstream
 	uint64_t addr_v = (uint64_t)addr;
 	struct page *page = spt_find_page(spt, page_addr);
 	uint64_t MAX_STACK = USER_STACK - (1<<20);
@@ -198,6 +200,15 @@ vm_try_handle_fault (struct intr_frame *f UNUSED, void *addr UNUSED,
 	rsp = user ? f->rsp : thread_current()->rsp; 
 
 	if (is_kernel_vaddr(addr)) 
+=======
+
+	uint64_t MAX_STACK = USER_STACK - (1<<20);
+
+	uint64_t addr_v = (uint64_t)addr;
+	uint64_t rsp = user ? f->rsp : thread_current()->rsp;
+
+	if (addr == NULL || is_kernel_vaddr(addr)) 
+>>>>>>> Stashed changes
 		return false;
 
 	if (!not_present && write)
@@ -205,11 +216,20 @@ vm_try_handle_fault (struct intr_frame *f UNUSED, void *addr UNUSED,
 
 	/* TODO: Validate the fault */
 	/* TODO: Your code goes here */
+<<<<<<< Updated upstream
 	if (page == NULL) {
 		if (addr_v > MAX_STACK && addr_v < USER_STACK && addr_v >= rsp -8) {
 			vm_stack_growth(page_addr);
 			page = spt_find_page(spt, page_addr);
 		} else { 
+=======
+	struct page *page = spt_find_page(spt, page_addr);
+	if (page == NULL) {
+		if (addr_v > MAX_STACK && addr_v < USER_STACK && addr_v >= rsp - 8) {
+			vm_stack_growth(page_addr);
+			page = spt_find_page(spt, page_addr);
+		} else {
+>>>>>>> Stashed changes
 			return false ; 
 		}
 	}

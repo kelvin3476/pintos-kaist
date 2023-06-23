@@ -25,4 +25,10 @@ void argument_stack(char **parse, int count, void **esp);
 /* System Call */
 struct thread *get_child_process(int pid);
 
+<<<<<<< Updated upstream
+=======
+/* Virtual Memory */
+bool lazy_load_segment(struct page *page, void *aux);
+
+>>>>>>> Stashed changes
 #endif /* userprog/process.h */
