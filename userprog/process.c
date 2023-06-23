@@ -178,9 +178,15 @@ __do_fork (void *aux) {
 		cnt++;
 	}
 	current->next_fd = parent->next_fd;
+<<<<<<< Updated upstream
 
  	sema_up(&parent->sema_fork);
 
+=======
+
+ 	sema_up(&parent->sema_fork);
+
+>>>>>>> Stashed changes
   	process_init ();
 	/* Finally, switch to the newly created process. */
 	if (succ)
@@ -270,10 +276,17 @@ process_exit (void) {
 		}
 		cnt++;
 	}
+<<<<<<< Updated upstream
 
 	sema_up(&curr->sema_wait);
 	sema_down(&curr->sema_exit);
 
+=======
+
+	sema_up(&curr->sema_wait);
+	sema_down(&curr->sema_exit);
+
+>>>>>>> Stashed changes
 	palloc_free_page(table);
 	process_cleanup ();
 }
@@ -515,6 +528,7 @@ struct thread *get_child_process(int pid) {
 }
 
 void argument_stack(char **parse, int count, void **esp) {
+<<<<<<< Updated upstream
   
   char *argv_address[count];
   uint8_t size = 0;
@@ -528,12 +542,29 @@ void argument_stack(char **parse, int count, void **esp) {
 	}
 
 	if (size % 8) {
+=======
+    char *argv_address[count];
+    uint8_t size = 0;
+
+    // Copy and calculate size of each argument
+    for (int i = count - 1; i >= 0; i--) {
+        int arg_length = strlen(parse[i]) + 1;
+        *esp -= arg_length;
+        memcpy(*esp, parse[i], arg_length);
+        size += arg_length;
+        argv_address[i] = *esp;
+    }
+
+    // Pad size to ensure alignment on 8-byte boundary
+    if (size % 8) {
+>>>>>>> Stashed changes
 		for (int i = (8 - (size % 8)); 0 < i; i--) {
 			*esp -= 1;
 		**(char **)esp = 0;
 	}
   }
 
+<<<<<<< Updated upstream
   *esp -= 8;
   **(char **)esp = 0;
 
@@ -549,6 +580,24 @@ void argument_stack(char **parse, int count, void **esp) {
 
 }
 
+=======
+    // Null-terminate the last word-aligned address
+    *esp -= 8;
+    memset(*esp, 0, 8);
+
+    // Copy the addresses of argv[i]
+    for (int i = count - 1; i >= 0; i--) {
+        *esp -= sizeof(char*);
+        memcpy(*esp, &argv_address[i], sizeof(char*));
+    }
+
+    // Push a fake return address
+    *esp -= sizeof(char*);
+    memset(*esp, 0, sizeof(char*));
+}
+
+
+>>>>>>> Stashed changes
 
 /* Checks whether PHDR describes a valid, loadable segment in
  * FILE and returns true if so, false otherwise. */

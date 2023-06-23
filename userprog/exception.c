@@ -147,12 +147,15 @@ page_fault (struct intr_frame *f) {
 #endif
 	
 	exit(-1);
+<<<<<<< Updated upstream
 
 	//    if(user) {
     //     exit(-1);
     // }
 	
 	exit(-1);
+=======
+>>>>>>> Stashed changes
 
 	/* Count page faults. */
 	page_fault_cnt++;
