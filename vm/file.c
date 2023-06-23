@@ -57,12 +57,6 @@ file_backed_swap_out (struct page *page) {
 static void
 file_backed_destroy (struct page *page) {
 	struct file_page *file_page UNUSED = &page->file;
-<<<<<<< Updated upstream
-	if (page->frame) {
-		page->frame->page = NULL;
-	}
-	free(page->frame);
-=======
 	if(pml4_is_dirty(thread_current()->pml4, page->va)) {
 		//변경사항을 파일에 저장하기
 		file_write_at(file_page->file, page->va, file_page->read_bytes, file_page->offset);
@@ -70,7 +64,6 @@ file_backed_destroy (struct page *page) {
 		pml4_set_dirty(thread_current()->pml4, page->va, 0);
 	}
 	pml4_clear_page(thread_current()->pml4, page->va);
->>>>>>> Stashed changes
 }
 
 /* Do the mmap */

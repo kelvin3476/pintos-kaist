@@ -48,12 +48,9 @@ struct page {
 
 	/* Your implementation */
 	struct hash_elem hash_elem;
-	bool writable;
-<<<<<<< Updated upstream
-=======
+	bool writable;	
 	int mapped_page_cnt;
->>>>>>> Stashed changes
-
+	
 	enum vm_type full_type; // vm_type with markers
 	/* Per-type data are binded into the union.
 	 * Each function automatically detects the current union */
@@ -117,14 +114,5 @@ bool vm_alloc_page_with_initializer (enum vm_type type, void *upage,
 void vm_dealloc_page (struct page *page);
 bool vm_claim_page (void *va);
 enum vm_type page_get_type (struct page *page);
-
-struct aux_data {
-	struct file *file ;
-	void * va;
-	bool writable;
-	uint32_t page_read_bytes;
-	uint32_t page_zero_bytes;
-	off_t ofs; 
-};
 
 #endif  /* VM_VM_H */

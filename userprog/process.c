@@ -178,15 +178,9 @@ __do_fork (void *aux) {
 		cnt++;
 	}
 	current->next_fd = parent->next_fd;
-<<<<<<< Updated upstream
 
  	sema_up(&parent->sema_fork);
 
-=======
-
- 	sema_up(&parent->sema_fork);
-
->>>>>>> Stashed changes
   	process_init ();
 	/* Finally, switch to the newly created process. */
 	if (succ)
@@ -276,17 +270,10 @@ process_exit (void) {
 		}
 		cnt++;
 	}
-<<<<<<< Updated upstream
 
 	sema_up(&curr->sema_wait);
 	sema_down(&curr->sema_exit);
 
-=======
-
-	sema_up(&curr->sema_wait);
-	sema_down(&curr->sema_exit);
-
->>>>>>> Stashed changes
 	palloc_free_page(table);
 	process_cleanup ();
 }
@@ -711,13 +698,8 @@ install_page (void *upage, void *kpage, bool writable) {
  * If you want to implement the function for only project 2, implement it on the
  * upper block. */
 
-<<<<<<< Updated upstream
-static bool
-lazy_load_segment (struct page *page, struct vm_entry *aux) {
-=======
 bool
 lazy_load_segment (struct page *page, void *aux) {
->>>>>>> Stashed changes
 	/* TODO: Load the segment from the file */
 	/* TODO: This called when the first page fault occurs on address VA. */
 	/* TODO: VA is available when calling this function. */
@@ -767,11 +749,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 		vme->read_bytes = page_read_bytes;
 		vme->zero_bytes = page_zero_bytes;
 		//aux 대신 vme를 넘겨준다.
-<<<<<<< Updated upstream
-		if (!vm_alloc_page_with_initializer(VM_ANON, upage, writable, lazy_load_segment, vme))
-=======
 		if (!vm_alloc_page_with_initializer(VM_ANON, upage, writable, lazy_load_segment, vme)) {
->>>>>>> Stashed changes
 			return false;
 		}
 
