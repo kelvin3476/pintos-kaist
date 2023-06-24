@@ -18,6 +18,7 @@
 #include "threads/mmu.h"
 #include "threads/vaddr.h"
 #include "intrinsic.h"
+#include "userprog/syscall.h"
 #ifdef VM
 #include "vm/vm.h"
 #endif
@@ -177,6 +178,7 @@ __do_fork (void *aux) {
 		}
 		cnt++;
 	}
+
 	current->next_fd = parent->next_fd;
 
  	sema_up(&parent->sema_fork);
@@ -209,7 +211,9 @@ process_exec (void *f_name) {
 	process_cleanup ();
 
 	/* And then load the binary */
+	lock_acquire(&filesys_lock);
 	success = load (file_name, &_if);
+	lock_release(&filesys_lock);
 
 	/* If load failed, quit. */
 	palloc_free_page (file_name);
@@ -258,9 +262,6 @@ process_exit (void) {
 	 * TODO: Implement process termination message (see
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
-  
-	if (curr->running_file)
-		file_close(curr->running_file);
 
 	int cnt = 2;
 	while (cnt < 128) {
@@ -271,11 +272,12 @@ process_exit (void) {
 		cnt++;
 	}
 
+	palloc_free_page(table);
+	file_close(curr->running_file);
+	process_cleanup ();
+
 	sema_up(&curr->sema_wait);
 	sema_down(&curr->sema_exit);
-
-	palloc_free_page(table);
-	process_cleanup ();
 }
 
 /* Free the current process's resources. */
@@ -781,6 +783,7 @@ setup_stack (struct intr_frame *if_) {
 		if (success){
 			/* TODO: If success, set the rsp accordingly. */
 			if_->rsp = USER_STACK;
+			// thread_current()->stack_bottom = stack_bottom;
 		}
 	}	
 	return success;

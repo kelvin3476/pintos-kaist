@@ -21,8 +21,6 @@
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
 
-#define FDT_COUNT_LIMIT 128
-
 /* System call.
  *
  * Previously system call services was handled by the interrupt handler
@@ -220,13 +218,6 @@ int
 read (int fd, void *buffer, unsigned size) {
 	check_address(buffer);
 
-	#ifdef VM
-		struct page* page = spt_find_page(&thread_current()->spt, buffer);
-		if (page->writable == 0) {
-			exit(-1);
-		}
-	#endif
-
 	if (fd == 1) {
 		return -1;
 	}
@@ -238,6 +229,14 @@ read (int fd, void *buffer, unsigned size) {
 		return byte;
 	}
 	struct file *file = thread_current()->fdt[fd];
+
+	#ifdef VM
+		struct page* page = spt_find_page(&thread_current()->spt, buffer);
+		if (page->writable == 0) {
+			exit(-1);
+		}
+	#endif
+
 	if (file) {
 		lock_acquire(&filesys_lock);
 		int read_byte = file_read(file, buffer, size);
@@ -306,6 +305,8 @@ check_address(void *addr) {
 	if (addr == NULL || !is_user_vaddr(addr)) {
         exit(-1);
     } 
+
+	// return spt_find_page(&thread_current()->spt, addr);
 	// if (spt_find_page(&thread_current()->spt, (uint64_t)addr) == NULL) {
 	// 	exit(-1);
 	// }

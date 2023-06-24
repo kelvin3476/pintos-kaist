@@ -159,6 +159,6 @@ bool lazy_load_seg(struct page *page, void *aux)
    }
    // 3) 다 읽은 지점부터 zero_bytes만큼 0으로 채운다.
    memset(page->frame->kva + file_page->read_bytes, 0, file_page->zero_bytes);
-   free(file_page);
+//    free(file_page);
    return true;
 }

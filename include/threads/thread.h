@@ -30,6 +30,8 @@ typedef int tid_t;
 #define PRI_DEFAULT 31                  /* Default priority. */
 #define PRI_MAX 63                      /* Highest priority. */
 
+#define FDT_COUNT_LIMIT 128
+
 /* A kernel thread or user process.
  *
  * Each thread structure is stored in its own 4 kB page.  The
@@ -131,7 +133,7 @@ struct thread {
 #endif
 
 	uint64_t rsp;
-	uint64_t stack_btm;
+	uint64_t stack_bottom;
 
 	/* Owned by thread.c. */
 	struct intr_frame tf;               /* Information for switching */
