@@ -180,15 +180,9 @@ __do_fork (void *aux) {
 	}
 
 	current->next_fd = parent->next_fd;
-<<<<<<< Updated upstream
 
  	sema_up(&parent->sema_fork);
 
-=======
-
- 	sema_up(&parent->sema_fork);
-
->>>>>>> Stashed changes
   	process_init ();
 	/* Finally, switch to the newly created process. */
 	if (succ)
@@ -279,15 +273,11 @@ process_exit (void) {
 	}
 
 	palloc_free_page(table);
-<<<<<<< Updated upstream
-	file_close(curr->running_file);
-=======
 
 	if (curr->running_file) {
 		file_close(curr->running_file);
 	}
 	
->>>>>>> Stashed changes
 	process_cleanup ();
 
 	sema_up(&curr->sema_wait);

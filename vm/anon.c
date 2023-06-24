@@ -105,12 +105,6 @@ anon_swap_out (struct page *page) {
 static void
 anon_destroy (struct page *page) {
 	struct anon_page *anon_page = &page->anon;
-<<<<<<< Updated upstream
-	if (page->frame) {
-		page->frame->page = NULL;
-	}
-	free(page->frame);
-=======
 	struct slot *slot;
 
 	lock_acquire(&swap_table_lock);
@@ -126,5 +120,4 @@ anon_destroy (struct page *page) {
 	// 	page->frame->page = NULL;
 	// }
 	// free(page->frame);
->>>>>>> Stashed changes
 }

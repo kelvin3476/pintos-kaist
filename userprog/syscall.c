@@ -18,11 +18,8 @@
 #include "threads/mmu.h"
 #include "vm/file.h"
 
-<<<<<<< Updated upstream
-=======
 #include "userprog/process.h"
 
->>>>>>> Stashed changes
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
 
@@ -106,24 +103,18 @@ syscall_handler (struct intr_frame *f) {
 		case SYS_CLOSE:
 			close(f->R.rdi);
 			break;
-<<<<<<< Updated upstream
-=======
 
 		#ifdef VM
 
->>>>>>> Stashed changes
 		case SYS_MMAP:
 			f->R.rax = mmap(f->R.rdi, f->R.rsi, f->R.rdx, f->R.r10, f->R.r8);
 			break;
 		case SYS_MUNMAP:
 			munmap(f->R.rdi);
 			break;
-<<<<<<< Updated upstream
-=======
 
 		#endif
 
->>>>>>> Stashed changes
 		default:
 			exit(-1);
 			break;
@@ -229,117 +220,6 @@ filesize (int fd) {
 
 	lock_release(&filesys_lock);
 	return -1;
-<<<<<<< Updated upstream
-}
-
-int
-read (int fd, void *buffer, unsigned size) {
-	check_address(buffer);
-
-	if (fd == 1) {
-		return -1;
-	}
-
-	if (fd == 0) {
-		lock_acquire(&filesys_lock);
-		int byte = input_getc();
-		lock_release(&filesys_lock);
-		return byte;
-	}
-	struct file *file = thread_current()->fdt[fd];
-
-	#ifdef VM
-		struct page* page = spt_find_page(&thread_current()->spt, buffer);
-		if (page->writable == 0) {
-			exit(-1);
-		}
-	#endif
-
-	if (file) {
-		lock_acquire(&filesys_lock);
-		int read_byte = file_read(file, buffer, size);
-		lock_release(&filesys_lock);
-		return read_byte;
-	}
-	return -1;
-}
-
-int
-write (int fd UNUSED, const void *buffer, unsigned size) {
-	check_address(buffer);
-
-	if (fd == 0) { // STDIN 일때 -1
-		return -1;
-	}
-
-	if (fd == 1) {
-		lock_acquire(&filesys_lock);
-		putbuf(buffer, size);
-		lock_release(&filesys_lock);
-		return size;
-	}
-	struct file *file = thread_current()->fdt[fd];
-	if (file) {
-		lock_acquire(&filesys_lock);
-		int write_byte = file_write(file, buffer, size);
-		lock_release(&filesys_lock);
-		return write_byte;
-	}
-}
-
-void
-seek (int fd, unsigned position) {
-	struct file *curfile = thread_current()->fdt[fd];
-	if (curfile) {
-		file_seek(curfile, position);
-	}
-}
-
-unsigned
-tell (int fd) {
-	struct file *curfile = thread_current()->fdt[fd];
-	if (curfile) {
-
-		lock_acquire(&filesys_lock);
-		return file_tell(curfile);
-		lock_release(&filesys_lock);
-
-	}
-}
-
-void
-close (int fd) {
-	struct file *file = thread_current()->fdt[fd];
-	if (file) {
-		lock_acquire(&filesys_lock);
-		thread_current()->fdt[fd] = NULL;
-		file_close(file);
-		lock_release(&filesys_lock);
-	}
-}
-
-void
-check_address(void *addr) {
-	if (addr == NULL || !is_user_vaddr(addr)) {
-        exit(-1);
-    } 
-
-	// return spt_find_page(&thread_current()->spt, addr);
-	// if (spt_find_page(&thread_current()->spt, (uint64_t)addr) == NULL) {
-	// 	exit(-1);
-	// }
-	// struct thread *cur = thread_current();
-	// if (addr == NULL || is_kernel_vaddr(addr) || pml4_get_page(cur->pml4, addr) == NULL)
-	// 	exit(-1);
-	// if(!is_user_vaddr(addr)) {
-    //     return false;
-    // }
-    // if (spt_find_page(&thread_current()->spt, addr)== NULL) {
-    //     return false;
-    // }
-	// return true;
-}
-=======
 }
 
 int
@@ -455,7 +335,6 @@ check_address(void *addr) {
 }
 
 #ifdef VM
->>>>>>> Stashed changes
 
 void *mmap (void *addr, size_t length, int writable, int fd, off_t offset) {
 
@@ -496,10 +375,6 @@ struct file *process_get_file(int fd)
 		return NULL;
 	}
 	return fdt[fd];
-<<<<<<< Updated upstream
-}
-=======
 }
 
 #endif
->>>>>>> Stashed changes

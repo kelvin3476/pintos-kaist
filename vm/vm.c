@@ -98,11 +98,7 @@ spt_find_page (struct supplemental_page_table *spt UNUSED, void *va UNUSED) {
 
 	//va와 동일한 해시 검색
 	struct hash_elem *e = hash_find(&spt->hash, &page->hash_elem);
-<<<<<<< Updated upstream
-	free(page); //사용을 완료한 페이지 메모리 해제하기
-=======
 	free(page);
->>>>>>> Stashed changes
 	if (e == NULL) { // 없을 경우
 		return NULL;
 	}
@@ -123,18 +119,10 @@ spt_insert_page (struct supplemental_page_table *spt UNUSED, struct page *page U
 
 void
 spt_remove_page (struct supplemental_page_table *spt, struct page *page) {
-<<<<<<< Updated upstream
-	struct hash_elem *e = hash_delete(&spt->hash, &page->hash_elem);
-	if(e == NULL) {
-		return;
-	}
-	vm_dealloc_page(page);
-=======
 	if (page == NULL) {
 		vm_dealloc_page(page);
 	}
 
->>>>>>> Stashed changes
 	return;
 }
 
@@ -143,8 +131,6 @@ static struct frame *
 vm_get_victim (void) {
 	struct frame *victim = NULL;
 	/* TODO: The policy for eviction is up to you. */
-<<<<<<< Updated upstream
-=======
 	struct thread *curr = thread_current();
 
 	lock_acquire(&frame_table_lock);
@@ -166,7 +152,6 @@ vm_get_victim (void) {
 		}
 	}
 	lock_release(&frame_table_lock);
->>>>>>> Stashed changes
 
 	return victim;
 }
@@ -195,15 +180,6 @@ vm_get_frame (void) {
 	//사용자 풀에서 페이지를 할당받기 - 할당받은 물리 메모리 주소 반환
 	void *addr = palloc_get_page(PAL_USER);
 	if(addr == NULL) {
-<<<<<<< Updated upstream
-		PANIC("vm_get_frame()");
-	}
-
-	frame = (struct frame *)malloc(sizeof(struct frame));
-	frame->kva = addr;
-	frame->page = NULL;
-
-=======
 		frame = vm_evict_frame();
 		frame->page = NULL;
 		return frame;
@@ -217,7 +193,6 @@ vm_get_frame (void) {
 	list_push_back(&frame_table, &frame->frame_elem);
 	lock_release(&frame_table_lock);
 
->>>>>>> Stashed changes
 	ASSERT(frame != NULL);
 	ASSERT (frame->page == NULL);
 
@@ -227,14 +202,6 @@ vm_get_frame (void) {
 /* Growing the stack. */
 static void
 vm_stack_growth (void *addr UNUSED) {
-<<<<<<< Updated upstream
-	struct supplemental_page_table *spt = &thread_current ()->spt;
-	while (!spt_find_page (spt, addr)) {
-		vm_alloc_page (VM_ANON | VM_MARKER_0, addr, true);
-		vm_claim_page (addr);
-		addr += PGSIZE;
-  }
-=======
 	vm_alloc_page(VM_ANON | VM_MARKER_0, pg_round_down(addr), 1);
 // 	struct supplemental_page_table *spt = &thread_current ()->spt;
 // 	while (!spt_find_page (spt, addr)) {
@@ -242,7 +209,6 @@ vm_stack_growth (void *addr UNUSED) {
 // 		vm_claim_page (addr);
 // 		addr += PGSIZE;
 //   }
->>>>>>> Stashed changes
 }
 
 /* Handle the fault on write_protected page */
@@ -252,35 +218,6 @@ vm_handle_wp (struct page *page UNUSED) {
 
 /* Return true on success */
 bool
-<<<<<<< Updated upstream
-vm_try_handle_fault (struct intr_frame *f UNUSED, void *addr UNUSED,
-		bool user UNUSED, bool write UNUSED, bool not_present UNUSED) {
-
-	struct supplemental_page_table *spt UNUSED = &thread_current ()->spt;
-	void *page_addr = pg_round_down(addr); // 페이지 사이즈로 내려서 spt_find 해야 하기 때문 
-
-	uint64_t MAX_STACK = USER_STACK - (1<<20);
-
-	uint64_t addr_v = (uint64_t)addr;
-	uint64_t rsp = user ? f->rsp : thread_current()->rsp;
-
-	if (addr == NULL || is_kernel_vaddr(addr)) 
-		return false;
-
-	if (!not_present && write)
-    	return false;
-
-	/* TODO: Validate the fault */
-	/* TODO: Your code goes here */
-	struct page *page = spt_find_page(spt, page_addr);
-	if (page == NULL) {
-		if (addr_v > MAX_STACK && addr_v < USER_STACK && addr_v >= rsp - 8) {
-			vm_stack_growth(page_addr);
-			page = spt_find_page(spt, page_addr);
-		} else {
-			return false ; 
-		}
-=======
 vm_try_handle_fault (struct intr_frame *f UNUSED, void *addr UNUSED, bool user UNUSED, bool write UNUSED, bool not_present UNUSED) {
 
 	struct supplemental_page_table *spt UNUSED = &thread_current ()->spt;
@@ -291,7 +228,6 @@ vm_try_handle_fault (struct intr_frame *f UNUSED, void *addr UNUSED, bool user U
 	
 	if (addr == NULL || is_kernel_vaddr(addr)) {
 		return false;
->>>>>>> Stashed changes
 	}
 
 	if (not_present) { //접근하려는 페이지가 물리 메모리에 존재하지 않을 경우
