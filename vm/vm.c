@@ -23,6 +23,8 @@ vm_init (void) {
 	register_inspect_intr ();
 	/* DO NOT MODIFY UPPER LINES. */
 	/* TODO: Your code goes here. */
+	list_init(&frame_table);
+	lock_init(&frame_table_lock);
 }
 
 /* Get the type of the page. This function is useful if you want to know the
@@ -96,7 +98,11 @@ spt_find_page (struct supplemental_page_table *spt UNUSED, void *va UNUSED) {
 
 	//va와 동일한 해시 검색
 	struct hash_elem *e = hash_find(&spt->hash, &page->hash_elem);
+<<<<<<< Updated upstream
 	free(page); //사용을 완료한 페이지 메모리 해제하기
+=======
+	free(page);
+>>>>>>> Stashed changes
 	if (e == NULL) { // 없을 경우
 		return NULL;
 	}
@@ -117,11 +123,18 @@ spt_insert_page (struct supplemental_page_table *spt UNUSED, struct page *page U
 
 void
 spt_remove_page (struct supplemental_page_table *spt, struct page *page) {
+<<<<<<< Updated upstream
 	struct hash_elem *e = hash_delete(&spt->hash, &page->hash_elem);
 	if(e == NULL) {
 		return;
 	}
 	vm_dealloc_page(page);
+=======
+	if (page == NULL) {
+		vm_dealloc_page(page);
+	}
+
+>>>>>>> Stashed changes
 	return;
 }
 
@@ -130,6 +143,30 @@ static struct frame *
 vm_get_victim (void) {
 	struct frame *victim = NULL;
 	/* TODO: The policy for eviction is up to you. */
+<<<<<<< Updated upstream
+=======
+	struct thread *curr = thread_current();
+
+	lock_acquire(&frame_table_lock);
+	for (struct list_elem *f = list_begin(&frame_table); f != list_end(&frame_table); f = list_next(f)) {
+		victim = list_entry(f, struct frame, frame_elem);
+		if(victim->page == NULL) { //현재 프레임에 페이지가 없으므로 희생자로 선택
+			lock_release(&frame_table_lock);
+			return victim;
+		}
+
+		//PTE에 접근했는지 여부 판단 : 즉 최근에 접급한 적이 있으면
+		if (pml4_is_accessed(curr->pml4, victim->page->va)) {
+			//접근 비트를 0으로 설정
+			pml4_set_accessed(curr->pml4, victim->page->va, 0);
+		}
+		else { //최근에 접근한 적이 없으면 희생자로 선택
+			lock_release(&frame_table_lock);
+			return victim;
+		}
+	}
+	lock_release(&frame_table_lock);
+>>>>>>> Stashed changes
 
 	return victim;
 }
@@ -140,8 +177,11 @@ static struct frame *
 vm_evict_frame (void) {
 	struct frame *victim UNUSED = vm_get_victim ();
 	/* TODO: swap out the victim and return the evicted frame. */
+	if(victim->page) {
+		swap_out(victim->page);
+	}
 
-	return NULL;
+	return victim;
 }
 
 /* palloc() and get frame. If there is no available page, evict the page
@@ -155,6 +195,7 @@ vm_get_frame (void) {
 	//사용자 풀에서 페이지를 할당받기 - 할당받은 물리 메모리 주소 반환
 	void *addr = palloc_get_page(PAL_USER);
 	if(addr == NULL) {
+<<<<<<< Updated upstream
 		PANIC("vm_get_frame()");
 	}
 
@@ -162,6 +203,21 @@ vm_get_frame (void) {
 	frame->kva = addr;
 	frame->page = NULL;
 
+=======
+		frame = vm_evict_frame();
+		frame->page = NULL;
+		return frame;
+	}
+
+	frame = (struct frame *)malloc(sizeof(struct frame));
+	frame->kva = addr;
+	frame->page = NULL;
+
+	lock_acquire(&frame_table_lock);
+	list_push_back(&frame_table, &frame->frame_elem);
+	lock_release(&frame_table_lock);
+
+>>>>>>> Stashed changes
 	ASSERT(frame != NULL);
 	ASSERT (frame->page == NULL);
 
@@ -171,12 +227,22 @@ vm_get_frame (void) {
 /* Growing the stack. */
 static void
 vm_stack_growth (void *addr UNUSED) {
+<<<<<<< Updated upstream
 	struct supplemental_page_table *spt = &thread_current ()->spt;
 	while (!spt_find_page (spt, addr)) {
 		vm_alloc_page (VM_ANON | VM_MARKER_0, addr, true);
 		vm_claim_page (addr);
 		addr += PGSIZE;
   }
+=======
+	vm_alloc_page(VM_ANON | VM_MARKER_0, pg_round_down(addr), 1);
+// 	struct supplemental_page_table *spt = &thread_current ()->spt;
+// 	while (!spt_find_page (spt, addr)) {
+// 		vm_alloc_page (VM_ANON | VM_MARKER_0, addr, true);
+// 		vm_claim_page (addr);
+// 		addr += PGSIZE;
+//   }
+>>>>>>> Stashed changes
 }
 
 /* Handle the fault on write_protected page */
@@ -186,6 +252,7 @@ vm_handle_wp (struct page *page UNUSED) {
 
 /* Return true on success */
 bool
+<<<<<<< Updated upstream
 vm_try_handle_fault (struct intr_frame *f UNUSED, void *addr UNUSED,
 		bool user UNUSED, bool write UNUSED, bool not_present UNUSED) {
 
@@ -213,9 +280,41 @@ vm_try_handle_fault (struct intr_frame *f UNUSED, void *addr UNUSED,
 		} else {
 			return false ; 
 		}
+=======
+vm_try_handle_fault (struct intr_frame *f UNUSED, void *addr UNUSED, bool user UNUSED, bool write UNUSED, bool not_present UNUSED) {
+
+	struct supplemental_page_table *spt UNUSED = &thread_current ()->spt;
+	struct page *page = NULL;
+
+	/* TODO: Validate the fault */
+	/* TODO: Your code goes here */
+	
+	if (addr == NULL || is_kernel_vaddr(addr)) {
+		return false;
+>>>>>>> Stashed changes
 	}
 
-	return vm_do_claim_page (page);
+	if (not_present) { //접근하려는 페이지가 물리 메모리에 존재하지 않을 경우
+		void *rsp = f->rsp;
+		if(!user) {
+			rsp = thread_current()->rsp;
+		}
+		//USER_STACK - (1 << 20) = 스택 최대 크기 = 1MB
+		//x86-64 PUSH 명령어는 스택 포인터를 조정하기 전에 액세스 권한을 확인하므로 스택 포인터 아래 8바이트의 페이지 장애가 발생할 수 있다.
+		if ((USER_STACK - (1 << 20) <= rsp - 8 && rsp - 8 <= addr && addr <= USER_STACK)) {
+			vm_stack_growth(addr);
+		}
+		page = spt_find_page(spt, addr);
+		if(page == NULL) {
+			return false;
+		}
+		if (write && (!page->writable)) { //권한이 없는데 쓰려고 하는 경우
+			return false;
+		}
+		return vm_do_claim_page(page);
+	}
+	
+	return false;
 }
 
 /* Free the page.

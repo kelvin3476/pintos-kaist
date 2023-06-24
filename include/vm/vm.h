@@ -37,6 +37,12 @@ struct thread;
 
 #define VM_TYPE(type) ((type) & 7)
 
+struct list frame_table; //lru 페이지 교체 기법으로 희생자 선택
+struct lock frame_table_lock;
+
+struct list swap_table; //swap slot 사용 여부를 판단하기 위해 사용
+struct lock swap_table_lock;
+
 /* The representation of "page".
  * This is kind of "parent class", which has four "child class"es, which are
  * uninit_page, file_page, anon_page, and page cache (project4).
@@ -68,6 +74,13 @@ struct page {
 struct frame {
 	void *kva;
 	struct page *page;
+	struct list_elem frame_elem;
+};
+
+struct slot {
+	struct page *page;
+	uint32_t slot;
+	struct list_elem swap_elem;
 };
 
 /* The function table for page operations.
