@@ -56,13 +56,9 @@ syscall_init (void) {
 void
 syscall_handler (struct intr_frame *f) {
 
-<<<<<<< Updated upstream
-	thread_current()->rsp = f->rsp;
-=======
 	#ifdef VM
 		thread_current()->rsp = f->rsp;
 	#endif
->>>>>>> Stashed changes
 
 	// TODO: Your implementation goes here.
 	switch (f->R.rax) {
