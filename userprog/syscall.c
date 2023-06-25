@@ -201,7 +201,7 @@ open (const char *file) {
 		}
 		file_close(fd);
 	}
-
+	
 	lock_release(&filesys_lock);
 	return -1;
 }
@@ -225,7 +225,7 @@ filesize (int fd) {
 int
 read (int fd, void *buffer, unsigned size) {
 	check_address(buffer);
-
+	
 	if (fd == 1) {
 		return -1;
 	}
@@ -236,6 +236,7 @@ read (int fd, void *buffer, unsigned size) {
 		lock_release(&filesys_lock);
 		return byte;
 	}
+
 	struct file *file = thread_current()->fdt[fd];
 
 	#ifdef VM
@@ -251,6 +252,7 @@ read (int fd, void *buffer, unsigned size) {
 		lock_release(&filesys_lock);
 		return read_byte;
 	}
+
 	return -1;
 }
 
@@ -268,6 +270,7 @@ write (int fd UNUSED, const void *buffer, unsigned size) {
 		lock_release(&filesys_lock);
 		return size;
 	}
+
 	struct file *file = thread_current()->fdt[fd];
 	if (file) {
 		lock_acquire(&filesys_lock);
@@ -292,11 +295,13 @@ seek (int fd, unsigned position) {
 unsigned
 tell (int fd) {
 	struct file *curfile = thread_current()->fdt[fd];
+	
+	lock_acquire(&filesys_lock);
+
 	if (curfile) {
 
-		lock_acquire(&filesys_lock);
-		return file_tell(curfile);
 		lock_release(&filesys_lock);
+		return file_tell(curfile);
 
 	}
 }

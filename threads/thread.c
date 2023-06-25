@@ -399,7 +399,9 @@ void
 thread_test_preemption (void) {
 	if (!list_empty(&ready_list)) {
 		if (thread_compare_priority(&list_entry(list_front(&ready_list), struct thread, elem)->elem, &thread_current()->elem, 0)) {
-			thread_yield();
+			if (!intr_context()) {
+				thread_yield();
+			}
 		}
 	}
 	// if (!list_empty (&ready_list) && thread_current()->priority < list_entry(list_front(&ready_list), struct thread, elem)->priority)
